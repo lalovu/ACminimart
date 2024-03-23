@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dbase/page/add_product.dart';
-import 'package:dbase/page/saved_products.dart'; 
+import 'package:dbase/page/product_inventory_page.dart'; // Import the ProductsPage widget
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -9,7 +9,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home'),
+        title: const Text('Home'),
       ),
       body: Center(
         child: Column(
@@ -20,21 +20,20 @@ class HomePage extends StatelessWidget {
                 // Navigate to AddProductPage
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AddProductPage()),
+                  MaterialPageRoute(builder: (context) =>  AddProductPage()),
                 );
               },
-              child: Text('Add Product'),
+              child: const Text('Add Products'),
             ),
-            SizedBox(height: 20), // Add some spacing
             ElevatedButton(
               onPressed: () {
-                // Navigate to SavedProductsPage
+                // Navigate to ProductsPage
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SavedProductsPage()),
+                  MaterialPageRoute(builder: (context) => ProductsPage()),
                 );
               },
-              child: Text('View Saved Products'),
+              child: const Text('View Products'),
             ),
             // You can add more buttons or UI elements here
           ],
@@ -43,4 +42,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-

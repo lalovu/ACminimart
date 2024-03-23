@@ -5,10 +5,12 @@ import 'package:dbase/page/home_page.dart';
 import 'package:dbase/page/add_product.dart'; 
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,8 +20,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/', // Set the initial route to '/'
       routes: {
-        '/': (context) => LoginPage(), // LoginPage mapped to '/'
-        '/home': (context) => HomePage(), // HomePage mapped to '/home'
+        '/': (context) => const LoginPage(), // LoginPage mapped to '/'
+        '/home': (context) => const HomePage(), // HomePage mapped to '/home'
         '/add_product': (context) => AddProductPage(), // AddProductPage mapped to '/add_product'
       },
     );

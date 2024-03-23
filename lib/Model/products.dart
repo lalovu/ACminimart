@@ -2,7 +2,7 @@
 final String tableInventory = 'Products';
 final String tableCustomer = 'Customers';
 final String tablePurchases = 'Purchase';
-
+final String tableCategory = 'Categories';
 
 class ProductFields {
  static final List <String> values = [
@@ -45,16 +45,17 @@ class PurchaseFields {
  static final String price = 'price';
 }
 
-
-
-
+class CategoryFields {
+  static final String id = '_id';
+  static final String name = 'name';
+}
 
 
 class Products {
  final int? id;
  final String name;
  final String description;
- final String category;
+ final int category;
  final int quantity;
  final double price;
 
@@ -73,7 +74,7 @@ class Products {
    int? id,
    String? name,
    String? description,
-   String? category,
+   int? category,
    int? quantity,
    double? price,
  }) =>
@@ -90,7 +91,7 @@ class Products {
    id: json[ProductFields.id] as int?,
    name: json[ProductFields.name] as String,
    description: json[ProductFields.description] as String,
-   category: json[ProductFields.category] as String,
+   category: json[ProductFields.category] as int,
    quantity: json[ProductFields.quantity] as int,
    price: json[ProductFields.price] as double,
  );
@@ -197,6 +198,26 @@ class Purchase {
        PurchaseFields.price: price,
      };
 
+}
 
- 
+class Category {
+  final int? id;
+  final String name;
+
+  Category({this.id, required this.name});
+
+  Category copy({int? id, String? name}) => Category(
+        id: id ?? this.id,
+        name: name ?? this.name,
+      );
+
+  static Category fromJson(Map<String, Object?> json) => Category(
+        id: json[CategoryFields.id] as int?,
+        name: json[CategoryFields.name] as String,
+      );
+
+  Map<String, Object?> toJson() => {
+        CategoryFields.id: id,
+        CategoryFields.name: name,
+      };
 }
