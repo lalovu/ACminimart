@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dbase/DB/inventory_database.dart';
 import 'package:dbase/Model/products.dart';
-import 'package:dbase/page/sales_page.dart';
-
- // Import the ReceiptPage widget
 
 class POSPage extends StatefulWidget {
   const POSPage({Key? key}) : super(key: key);
@@ -17,6 +14,14 @@ class _POSPageState extends State<POSPage> {
   String _customerEmail = '';
   int? _selectedProductId; // Change type to int? (nullable)
   int _quantity = 0;
+  late DateTime _selectedDate; // Track the selected date
+
+  @override
+  void initState() {
+    super.initState();
+    // Set the default selected date to today's date
+    _selectedDate = DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +96,23 @@ class _POSPageState extends State<POSPage> {
                 });
               },
             ),
+            SizedBox(height: 16),
+            // Date picker widget
+            InkWell(
+              onTap: () {
+                _selectDate(context);
+              },
+              child: Row(
+                children: [
+                  Text('Purchase Date: '),
+                  Text(
+                    '${_selectedDate.year}-${_selectedDate.month}-${_selectedDate.day}',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Icon(Icons.calendar_today),
+                ],
+              ),
+            ),
             SizedBox(height: 32),
             Center(
               child: ElevatedButton(
@@ -109,32 +131,40 @@ class _POSPageState extends State<POSPage> {
                       final product = await ACDatabase.instance.getProduct(_selectedProductId!);
 
                       // Create a purchase record in the Purchase table
-                      if (product != null && product.quantity >= _quantity){
-                        final purchase = Purchase(customerId: customerId, productId: _selectedProductId!, quantity: _quantity, price: 0.0);
+                      if (product != null && product.quantity >= _quantity) {
+                        final purchase = Purchase(
+                          customerId: customerId,
+                          productId: _selectedProductId!,
+                          quantity: _quantity,
+                          price: 0.0,
+                          createdTime: _selectedDate, // Use the selected date
+                        );
+
                         final purchaseId = await ACDatabase.instance.createPurchase(purchase);
 
                         final totalPrice = product.price * _quantity;
 
                         await ACDatabase.instance.updatePurchasePrice(purchaseId, totalPrice);
-                        await ACDatabase.instance.updateProductQuantity(_selectedProductId!, product!.quantity - _quantity);
-                             
+                        await ACDatabase.instance.updateProductQuantity(
+                            _selectedProductId!, product!.quantity - _quantity);
+
                         ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Purchase successful!'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                          SnackBar(
+                            content: Text('Purchase successful!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      } else {
+                        // Show error message if insufficient stock
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('No Stock Available'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
                     } else {
-                      // Show error message if customer details are not provided
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('No Stock Available'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  } else {
-                      // Show error message if customer details are not provided
+                                            // Show error message if customer details are not provided
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Please Provide Customer Details'),
@@ -160,4 +190,20 @@ class _POSPageState extends State<POSPage> {
       ),
     );
   }
+
+  // Function to display date picker
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+      });
+    }
+  }
 }
+

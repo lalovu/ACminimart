@@ -17,9 +17,7 @@ class ProductFields {
  static final String quantity = 'quantity';
  static final String price = 'price';
 
-
 }
-
 
 class CustomerFields {
  static final List<String> values = [
@@ -33,19 +31,24 @@ class CustomerFields {
  
 }
 
-
 class PurchaseFields {
- static final List<String> values = [id, customerId, productId, quantity, price];
-
+ static final List<String> values = [
+  id, customerId, productId, quantity, price, time
+ ];
 
  static final String id = '_id';
  static final String customerId = 'customer_id';
  static final String productId = 'product_id';
+ static final String categoryId = 'category';
  static final String quantity = 'quantity';
  static final String price = 'price';
+ static final String time = 'time';
 }
 
 class CategoryFields {
+  static final List<String> values = [
+  id, name
+ ];
   static final String id = '_id';
   static final String name = 'name';
 }
@@ -154,6 +157,8 @@ class Purchase {
  final int productId;
  final int quantity;
  final double price;
+ final DateTime createdTime;
+
 
 
  const Purchase({
@@ -162,6 +167,7 @@ class Purchase {
    required this.productId,
    required this.quantity,
    required this.price,
+   required this.createdTime,
  });
 
 
@@ -171,15 +177,16 @@ class Purchase {
    int? productId,
    int? quantity,
    double? price,
+   DateTime? createdTime,
  }) =>
      Purchase(
        id: id ?? this.id,
        customerId: customerId ?? this.customerId,
        productId: productId ?? this.productId,
        quantity: quantity ?? this.quantity,
-       price: price ?? this.price,
+       price: price ?? this.price,  
+       createdTime: createdTime ?? this.createdTime, 
      );
-
 
  static Purchase fromJson(Map<String, Object?> json) => Purchase(
        id: json[PurchaseFields.id] as int?,
@@ -187,6 +194,7 @@ class Purchase {
        productId: json[PurchaseFields.productId] as int,
        quantity: json[PurchaseFields.quantity] as int,
        price: json[PurchaseFields.price] as double,
+       createdTime: DateTime.parse(json[PurchaseFields.time] as String),
      );
 
 
@@ -196,6 +204,7 @@ class Purchase {
        PurchaseFields.productId: productId,
        PurchaseFields.quantity: quantity,
        PurchaseFields.price: price,
+       PurchaseFields.time: createdTime.toIso8601String(),
      };
 
 }

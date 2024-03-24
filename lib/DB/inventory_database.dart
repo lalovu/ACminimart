@@ -80,6 +80,7 @@ ${PurchaseFields.customerId} $integerType,
 ${PurchaseFields.productId} $integerType,
 ${PurchaseFields.quantity} $integerType,
 ${PurchaseFields.price} $doubleType,
+${PurchaseFields.time} $textType,
 FOREIGN KEY (${PurchaseFields.customerId}) REFERENCES $tableCustomer(${CustomerFields.id}),
 FOREIGN KEY (${PurchaseFields.productId}) REFERENCES $tableInventory(${ProductFields.id})
 )
@@ -360,7 +361,6 @@ Future<void> updatePurchasePrice(int purchaseId, double price) async {
       return Purchase.fromJson(maps[i]);
     });
   }
-
 
 
 

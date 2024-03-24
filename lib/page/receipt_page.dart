@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dbase/DB/inventory_database.dart';
 import 'package:dbase/Model/products.dart';
-
+import 'package:intl/intl.dart'; // Import DateFormat
 
 class SalesPage extends StatelessWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -10,7 +10,7 @@ class SalesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sales'),
+        title: Text('Receipts'),
       ),
       body: FutureBuilder<List<Purchase>>(
         future: ACDatabase.instance.getAllPurchases(),
@@ -57,6 +57,7 @@ class SalesPage extends StatelessWidget {
                       ),
                       Text('Quantity: ${purchase.quantity}'),
                       Text('Total Price: ₱${purchase.price}'),
+                      Text('Date Purchased: ${DateFormat.yMd().format(purchase.createdTime)}'), // Display purchase date
                     ],
                   ),
                   // You can display more information about the purchase if needed
