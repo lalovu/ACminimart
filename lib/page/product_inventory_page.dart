@@ -97,103 +97,102 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Products'),
-    ),
-    body: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: DropdownButton<int>(
-            value: _selectedCategoryId,
-            onChanged: (int? newValue) {
-              setState(() {
-                _selectedCategoryId = newValue ?? 0;
-                _fetchData(); // Update products based on the selected category
-              });
-            },
-            items: [
-              DropdownMenuItem<int>(
-                value: 0,
-                child: Text('All'),
-              ),
-              if (_categories != null) // Add null check here
-                for (var category in _categories)
-                  DropdownMenuItem<int>(
-                    value: category.id,
-                    child: Text(category.name),
-                  ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _getFilteredProducts().length,
-            itemBuilder: (context, index) {
-              final product = _getFilteredProducts()[index];
-              return ListTile(
-                title: Text(product.name),
-                subtitle: Text(product.description),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () {
-                    _deleteProduct(product.id!);
-                  },
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Products'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: DropdownButton<int>(
+              value: _selectedCategoryId,
+              onChanged: (int? newValue) {
+                setState(() {
+                  _selectedCategoryId = newValue ?? 0;
+                  _fetchData(); // Update products based on the selected category
+                });
+              },
+              items: [
+                DropdownMenuItem<int>(
+                  value: 0,
+                  child: Text('All'),
                 ),
-                onTap: () {
-                  _showUpdateDialog(product);
-                },
-              );
-            },
+                if (_categories != null) // Add null check here
+                  for (var category in _categories)
+                    DropdownMenuItem<int>(
+                      value: category.id,
+                      child: Text(category.name),
+                    ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          Expanded(
+            child: ListView.builder(
+              itemCount: _getFilteredProducts().length,
+              itemBuilder: (context, index) {
+                final product = _getFilteredProducts()[index];
+                return ListTile(
+                  title: Text(product.name),
+                  subtitle: Text(product.description),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      _deleteProduct(product.id!);
+                    },
+                  ),
+                  onTap: () {
+                    _showUpdateDialog(product);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-Future<void> _deleteProduct(int productId) async {
-  bool confirmDelete = await showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Confirm Delete'),
-      content: Text('Are you sure you want to delete this product?'),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context, false); // Return false to indicate cancellation
-          },
-          child: Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context, true); // Return true to indicate deletion confirmation
-          },
-          child: Text('Delete'),
-        ),
-      ],
-    ),
-  );
+  Future<void> _deleteProduct(int productId) async {
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete this product?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, false); // Return false to indicate cancellation
+            },
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true); // Return true to indicate deletion confirmation
+            },
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
 
-  if (confirmDelete == true) {
-    try {
-      // Delete the product from the database
-      await ACDatabase.instance.deleteProduct(productId);
-      // Refresh the UI
-      _fetchData();
-      // Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Product deleted successfully')),
-      );
-    } catch (e) {
-      // Show an error message if deletion fails
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete product')),
-      );
+    if (confirmDelete == true) {
+      try {
+        // Delete the product from the database
+        await ACDatabase.instance.deleteProduct(productId);
+        // Refresh the UI
+        _fetchData();
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Product deleted successfully')),
+        );
+      } catch (e) {
+        // Show an error message if deletion fails
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete product')),
+        );
+      }
     }
   }
-}
-
 }

@@ -106,6 +106,25 @@ FOREIGN KEY (${PurchaseFields.productId}) REFERENCES $tableInventory(${ProductFi
     return products.map((json) => Products.fromJson(json)).toList();
   }
 
+
+// Inside your ACDatabase class:
+
+Future<Products?> getProduct(int productId) async {
+  final db = await instance.database;
+  final products = await db.query(
+    tableInventory,
+    where: '${ProductFields.id} = ?',
+    whereArgs: [productId],
+  );
+  if (products.isNotEmpty) {
+    return Products.fromJson(products.first);
+  } else {
+    return null;
+  }
+}
+
+
+
 Future<int> updateProduct(Products product) async {
   final db = await instance.database;
   return await db.update(
@@ -129,34 +148,6 @@ Future<void> deleteProduct(int productId) async {
 
 // Checking of Product
 
- Future<Products> checkProduct(String category) async {
-   final db = await instance.database;
-
-
-   List<Map<String, dynamic>> maps;
-
-
-   if (category.toUpperCase() == 'ALL') {
-     maps = await db.query(
-       tableInventory,
-       columns: ProductFields.values,
-     );
-   } else {
-     maps = await db.query(
-       tableInventory,
-       columns: ProductFields.values,
-       where: '${ProductFields.category} = ?',
-       whereArgs: [category],
-     );
-   }
-
-
-   if (maps.isNotEmpty) {
-     return Products.fromJson(maps.first);
-   } else {
-     throw Exception('No products found for category: $category');
-   }
- }
 
  Future<void> updateProductPrice(int productId, double newPrice) async {
   final db = await instance.database;
@@ -178,7 +169,20 @@ Future<void> updateProductQuantity(int productId, int newQuantity) async {
   );
 }
 
-
+ Future<Products?> getProductById(int productId) async {
+  final db = await instance.database;
+  final List<Map<String, dynamic>> maps = await db.query(
+    tableInventory,
+    where: '${ProductFields.id} = ?',
+    whereArgs: [productId],
+  );
+  
+  if (maps.isNotEmpty) {
+    return Products.fromJson(maps.first);
+  } else {
+    return null; // Return null if product with given ID is not found
+  }
+}
 
 
 // Category 
@@ -227,21 +231,65 @@ Future<void> deleteCategory(int categoryId) async {
  Future<Customers> createCustomers(Customers customer) async {
    final db = await instance.database;
 
-
    final id = await db.insert(tableCustomer, customer.toJson());
    return customer.copy(id: id);
  }
 
+Future<Customers?> getCustomerByNameAndEmail(String name, String email) async {
+  final db = await instance.database;
+  final List<Map<String, dynamic>> maps = await db.query(
+    tableCustomer,
+    where: '${CustomerFields.name} = ? AND ${CustomerFields.email} = ?',
+    whereArgs: [name, email],
+  );
+  
+  if (maps.isNotEmpty) {
+    return Customers.fromJson(maps.first);
+  } else {
+    return null; // Return null if customer with given name and email is not found
+  }
+}
+
+Future<Customers?> getCustomer(int customerId) async {
+  final db = await instance.database;
+  
+  final List<Map<String, dynamic>> maps = await db.query(
+    tableCustomer,
+    where: '${CustomerFields.id} = ?',
+    whereArgs: [customerId],
+  );
+
+  if (maps.isNotEmpty) {
+    return Customers.fromJson(maps.first);
+  } else {
+    return null; // Return null if customer with specified ID is not found
+  }
+}
+
+
 
 // Create Purchase (POS)
 
- Future<Purchase> createPurchases(Purchase purchase) async {
-   final db = await instance.database;
+ Future<int> createPurchase(Purchase purchase) async {
+  final db = await instance.database;
+  final id = await db.insert(tablePurchases, purchase.toJson());
+  return id;
+}
 
 
-   final id = await db.insert(tablePurchases, purchase.toJson());
-   return purchase.copy(id: id);
- }
+Future<void> updatePurchasePrice(int purchaseId, double price) async {
+  final db = await instance.database;
+
+  await db.update(
+    tablePurchases,
+    {PurchaseFields.price: price},
+    where: '${PurchaseFields.id} = ?',
+    whereArgs: [purchaseId],
+  );
+}
+
+
+
 
 // Total Sales
 
@@ -302,6 +350,16 @@ Future<void> deleteCategory(int categoryId) async {
      throw Exception('Product not found.');
    }
  }
+
+   Future<List<Purchase>> getAllPurchases() async {
+    final db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(tablePurchases);
+
+    // Convert the List<Map<String, dynamic>> to a List<Purchase>
+    return List.generate(maps.length, (i) {
+      return Purchase.fromJson(maps[i]);
+    });
+  }
 
 
 
