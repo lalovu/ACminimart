@@ -2,9 +2,6 @@ import 'package:dbase/Model/products.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-
-
-
 class ACDatabase {
  static final ACDatabase instance = ACDatabase._init();
 
@@ -136,7 +133,6 @@ Future<void> deleteProduct(int productId) async {
 
 // Checking of Product
 
-
  Future<void> updateProductPrice(int productId, double newPrice) async {
   final db = await instance.database;
   await db.update(
@@ -157,25 +153,11 @@ Future<void> updateProductQuantity(int productId, int newQuantity) async {
   );
 }
 
- Future<Products?> getProductById(int productId) async {
-  final db = await instance.database;
-  final List<Map<String, dynamic>> maps = await db.query(
-    tableInventory,
-    where: '${ProductFields.id} = ?',
-    whereArgs: [productId],
-  );
-  
-  if (maps.isNotEmpty) {
-    return Products.fromJson(maps.first);
-  } else {
-    return null; // Return null if product with given ID is not found
-  }
-}
 
 
 // Category 
 
-    Future<int> addCategory(String categoryName) async {
+Future<int> addCategory(String categoryName) async {
   final db = await instance.database;
   return await db.insert(
     tableCategory,
@@ -193,7 +175,6 @@ Future<List<Products>> getProductsByCategory(int categoryId) async {
 
   return result.map((json) => Products.fromJson(json)).toList();
 }
-
 
 
 Future<List<Category>> getAllCategories() async {
@@ -223,20 +204,6 @@ Future<void> deleteCategory(int categoryId) async {
    return customer.copy(id: id);
  }
 
-Future<Customers?> getCustomerByNameAndEmail(String name, String email) async {
-  final db = await instance.database;
-  final List<Map<String, dynamic>> maps = await db.query(
-    tableCustomer,
-    where: '${CustomerFields.name} = ? AND ${CustomerFields.email} = ?',
-    whereArgs: [name, email],
-  );
-  
-  if (maps.isNotEmpty) {
-    return Customers.fromJson(maps.first);
-  } else {
-    return null; // Return null if customer with given name and email is not found
-  }
-}
 
 Future<Customers?> getCustomer(int customerId) async {
   final db = await instance.database;
@@ -253,7 +220,6 @@ Future<Customers?> getCustomer(int customerId) async {
     return null; // Return null if customer with specified ID is not found
   }
 }
-
 
 
 // Create Purchase (POS)
@@ -278,28 +244,6 @@ Future<void> updatePurchasePrice(int purchaseId, double price) async {
 
 
 
-
-// Total Sales
-
- Future<double> getTotalSalesForProduct(int productId) async {
-   final db = await instance.database;
-
-
-   final result = await db.query(
-     tablePurchases,
-     columns: [
-       'SUM(${PurchaseFields.quantity} * ${ProductFields.price}) AS total_sales'
-     ],
-     where: '${tablePurchases}.${PurchaseFields.productId} = ${tableInventory}.${ProductFields.id}',
-     whereArgs: [],
-   );
-
-
-   final totalSales = result.isNotEmpty ? result.first['total_sales'] as double : 0.0;
-
-
-   return totalSales;
- }
 
 // After Purchase it will deduct 
 
@@ -395,17 +339,11 @@ Future<void> deletePurchase(int purchaseId) async {
   );
 }
 
-
-
-
-
  Future close() async {
    final db = await instance.database;
 
 
    db.close();
-
-
  }
  
 }
