@@ -339,6 +339,20 @@ Future<void> deletePurchase(int purchaseId) async {
   );
 }
 
+  Future<Purchase?> getPurchase(int purchaseId) async {
+    final db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      tablePurchases,
+      where: '${PurchaseFields.id} = ?',
+      whereArgs: [purchaseId],
+    );
+    if (maps.isNotEmpty) {
+      return Purchase.fromJson(maps.first);
+    } else {
+      return null;
+    }
+  }
+
  Future close() async {
    final db = await instance.database;
 

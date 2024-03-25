@@ -181,7 +181,7 @@ Widget build(BuildContext context) {
                             Text('Last Week Sales ($lastWeekStartFormatted - $lastWeekEndFormatted): \₱${weeklySales['lastWeek']!.toStringAsFixed(2)}'),
                             Text('Today Sales ($todayDateFormatted): \₱${dailySales['today']!.toStringAsFixed(2)}'),                       
                             Text('This Week Sales ($startOfWeekFormatted - $endOfWeekFormatted): \₱${weeklySales['thisWeek']!.toStringAsFixed(2)}'),
-                             SizedBox(height: 15),
+                             SizedBox(height: 10),
                             Text('Overall Sales for Category: \₱${overallSalesForCategory.toStringAsFixed(2)}'),
                           ],
                         ),

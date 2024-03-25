@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Import DateFormat
 import 'package:dbase/DB/inventory_database.dart';
 import 'package:dbase/Model/products.dart';
-import 'package:intl/intl.dart'; // Import DateFormat
+
 
 class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
@@ -16,7 +17,13 @@ class _SalesPageState extends State<SalesPage> {
   @override
   void initState() {
     super.initState();
-    _purchases = ACDatabase.instance.getAllPurchases();
+    _fetchPurchases(); // Fetch purchases when the widget initializes
+  }
+
+  Future<void> _fetchPurchases() async {
+    setState(() {
+      _purchases = ACDatabase.instance.getAllPurchases(); // Retrieve all purchases from the database
+    });
   }
 
   @override
@@ -55,29 +62,15 @@ class _SalesPageState extends State<SalesPage> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      FutureBuilder<String>(
-                        future: _getCustomerName(purchase.customerId),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else {
-                            final customerName = snapshot.data!;
-                            return Text('Customer: $customerName');
-                          }
-                        },
-                      ),
                       Text('Quantity: ${purchase.quantity}'),
                       Text('Total Price: ₱${purchase.price}'),
                       Text('Date Purchased: ${DateFormat.yMd().format(purchase.createdTime)}'), // Display purchase date
                       ElevatedButton(
-                        onPressed: () => _deletePurchase(purchase.id!), // Call delete method
+                        onPressed: () => _confirmDeletePurchase(context, purchase.id!), // Call delete method
                         child: Text('Delete'),
                       ),
                     ],
                   ),
-                  // You can display more information about the purchase if needed
                 );
               },
             );
@@ -92,15 +85,46 @@ class _SalesPageState extends State<SalesPage> {
     return product?.name ?? 'Unknown'; // Return product name or 'Unknown' if not found
   }
 
-  Future<String> _getCustomerName(int customerId) async {
-    final customer = await ACDatabase.instance.getCustomer(customerId);
-    return customer?.name ?? 'Unknown'; // Return customer name or 'Unknown' if not found
+  Future<void> _confirmDeletePurchase(BuildContext context, int purchaseId) async {
+    final confirmed = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete this purchase?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deletePurchase(purchaseId);
+    }
   }
 
   Future<void> _deletePurchase(int purchaseId) async {
-    await ACDatabase.instance.deletePurchase(purchaseId);
-    setState(() {
-      _purchases = ACDatabase.instance.getAllPurchases(); // Refresh UI after deletion
-    });
+    // Get the purchase to know the product and quantity
+    final purchase = await ACDatabase.instance.getPurchase(purchaseId);
+    if (purchase != null) {
+      // Delete the purchase
+      await ACDatabase.instance.deletePurchase(purchaseId);
+      // Update product quantity
+      final product = await ACDatabase.instance.getProduct(purchase.productId);
+      if (product != null) {
+        final newQuantity = product.quantity + purchase.quantity;
+        await ACDatabase.instance.updateProductQuantity(purchase.productId, newQuantity);
+      }
+      // Re-fetch purchases
+      _fetchPurchases();
+    }
   }
 }
