@@ -124,18 +124,6 @@ Future<Products?> getProduct(int productId) async {
 }
 
 
-
-Future<int> updateProduct(Products product) async {
-  final db = await instance.database;
-  return await db.update(
-    tableInventory,
-    product.toJson(),
-    where: '${ProductFields.id} = ?',
-    whereArgs: [product.id],
-  );
-}
-
-
 Future<void> deleteProduct(int productId) async {
   final db = await instance.database;
   await db.delete(
