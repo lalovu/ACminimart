@@ -39,7 +39,6 @@ class PurchaseFields {
  static final String id = '_id';
  static final String customerId = 'customer_id';
  static final String productId = 'product_id';
- static final String categoryId = 'category';
  static final String quantity = 'quantity';
  static final String price = 'price';
  static final String time = 'time';

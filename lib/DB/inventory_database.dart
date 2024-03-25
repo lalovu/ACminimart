@@ -63,7 +63,6 @@ ${CustomerFields.name} $textType,
 ${CustomerFields.email} $textType
 )
 
-
 ''');
 
   await db.execute('''
@@ -361,6 +360,53 @@ Future<void> updatePurchasePrice(int purchaseId, double price) async {
       return Purchase.fromJson(maps[i]);
     });
   }
+
+Future<Map<int, double>> calculateOverallSalesPerCategory() async {
+  final Database db = await database;
+  final Map<int, double> overallSalesPerCategory = {};
+
+  // Query purchases table to get total sales for each product and its category
+  final List<Map<String, dynamic>> purchases = await db.query(
+    tablePurchases,
+    columns: [
+      '${PurchaseFields.productId}',
+      'SUM(${PurchaseFields.price}) AS totalSales',
+    ],
+    groupBy: '${PurchaseFields.productId}',
+  );
+
+  // Iterate through purchases to populate overall sales per category map
+  for (final purchase in purchases) {
+    final int productId = purchase[PurchaseFields.productId] as int;
+    final double totalSales = purchase['totalSales'] as double;
+
+    // Query products table to get category for the product
+    final List<Map<String, dynamic>> productData = await db.query(
+      tableInventory,
+      columns: [ProductFields.category],
+      where: '${ProductFields.id} = ?',
+      whereArgs: [productId],
+    );
+
+    // Extract category ID and update overall sales per category
+    if (productData.isNotEmpty) {
+      final int categoryId = productData.first[ProductFields.category] as int;
+      overallSalesPerCategory[categoryId] = (overallSalesPerCategory[categoryId] ?? 0) + totalSales;
+    }
+  }
+
+  return overallSalesPerCategory;
+}
+
+Future<void> deletePurchase(int purchaseId) async {
+  final db = await database;
+  await db.delete(
+    tablePurchases,
+    where: '${PurchaseFields.id} = ?',
+    whereArgs: [purchaseId],
+  );
+}
+
 
 
 

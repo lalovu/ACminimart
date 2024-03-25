@@ -3,8 +3,21 @@ import 'package:dbase/DB/inventory_database.dart';
 import 'package:dbase/Model/products.dart';
 import 'package:intl/intl.dart'; // Import DateFormat
 
-class SalesPage extends StatelessWidget {
+class SalesPage extends StatefulWidget {
   const SalesPage({Key? key}) : super(key: key);
+
+  @override
+  _SalesPageState createState() => _SalesPageState();
+}
+
+class _SalesPageState extends State<SalesPage> {
+  late Future<List<Purchase>> _purchases;
+
+  @override
+  void initState() {
+    super.initState();
+    _purchases = ACDatabase.instance.getAllPurchases();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +26,7 @@ class SalesPage extends StatelessWidget {
         title: Text('Receipts'),
       ),
       body: FutureBuilder<List<Purchase>>(
-        future: ACDatabase.instance.getAllPurchases(),
+        future: _purchases,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -58,6 +71,10 @@ class SalesPage extends StatelessWidget {
                       Text('Quantity: ${purchase.quantity}'),
                       Text('Total Price: ₱${purchase.price}'),
                       Text('Date Purchased: ${DateFormat.yMd().format(purchase.createdTime)}'), // Display purchase date
+                      ElevatedButton(
+                        onPressed: () => _deletePurchase(purchase.id!), // Call delete method
+                        child: Text('Delete'),
+                      ),
                     ],
                   ),
                   // You can display more information about the purchase if needed
@@ -78,5 +95,12 @@ class SalesPage extends StatelessWidget {
   Future<String> _getCustomerName(int customerId) async {
     final customer = await ACDatabase.instance.getCustomer(customerId);
     return customer?.name ?? 'Unknown'; // Return customer name or 'Unknown' if not found
+  }
+
+  Future<void> _deletePurchase(int purchaseId) async {
+    await ACDatabase.instance.deletePurchase(purchaseId);
+    setState(() {
+      _purchases = ACDatabase.instance.getAllPurchases(); // Refresh UI after deletion
+    });
   }
 }
