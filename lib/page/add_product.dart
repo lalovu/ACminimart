@@ -15,6 +15,7 @@ class _AddProductPageState extends State<AddProductPage> {
   int? _selectedCategoryId;
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _costController = TextEditingController();
 
   List<Category> _categories = [];
 
@@ -53,6 +54,12 @@ class _AddProductPageState extends State<AddProductPage> {
                 controller: _quantityController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: 'Quantity'),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _costController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Cost'),
               ),
               SizedBox(height: 10),
               TextField(
@@ -138,17 +145,20 @@ class _AddProductPageState extends State<AddProductPage> {
   final String description = _descriptionController.text;
   final int quantity = int.tryParse(_quantityController.text) ?? 0;
   final double price = double.tryParse(_priceController.text) ?? 0.0;
+  final double cost = double.tryParse(_costController.text) ?? 0.0;
 
   if (name.isNotEmpty &&
       description.isNotEmpty &&
       _selectedCategoryId != null &&
       quantity > 0 &&
-      price > 0) {
+      price > 0 &&
+      cost > 0) {
     final product = Products(
       name: name,
       description: description,
       category: _selectedCategoryId!,
       quantity: quantity,
+      cost: cost,
       price: price,
     );
 

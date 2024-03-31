@@ -12,7 +12,7 @@ class SalesPage extends StatefulWidget {
 }
 
 class _SalesPageState extends State<SalesPage> {
-  late Future<List<Purchase>> _purchases;
+  Future<List<Purchase>> _purchases = Future.value([]);
 
   @override
   void initState() {
@@ -20,12 +20,24 @@ class _SalesPageState extends State<SalesPage> {
     _fetchPurchases(); // Fetch purchases when the widget initializes
   }
 
-  Future<void> _fetchPurchases() async {
-    setState(() {
-      _purchases = ACDatabase.instance.getAllPurchases(); // Retrieve all purchases from the database
-    });
+Future<void> _fetchPurchases() async {
+  final List<Purchase> allPurchases = await ACDatabase.instance.getAllPurchases();
+  final List<Purchase> validPurchases = [];
+
+  for (final purchase in allPurchases) {
+    final product = await ACDatabase.instance.getProduct(purchase.productId);
+    if (product != null) {
+      validPurchases.add(purchase);
+    } else {
+      // If the product doesn't exist, delete the purchase
+      await ACDatabase.instance.deletePurchase(purchase.id!);
+    }
   }
 
+  setState(() {
+    _purchases = Future.value(validPurchases);
+  });
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(

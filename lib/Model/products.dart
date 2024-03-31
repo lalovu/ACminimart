@@ -6,7 +6,7 @@ final String tableCategory = 'Categories';
 
 class ProductFields {
  static final List <String> values = [
-   id, name, description, category, quantity, price
+   id, name, description, category, quantity, price, cost
  ];
 
 
@@ -16,6 +16,7 @@ class ProductFields {
  static final String category = 'category';
  static final String quantity = 'quantity';
  static final String price = 'price';
+ static final String cost = 'cost';
 
 }
 
@@ -23,7 +24,6 @@ class CustomerFields {
  static final List<String> values = [
    id, name, email
  ];
-
 
  static final String id = '_id';
  static final String name = 'name';
@@ -60,6 +60,7 @@ class Products {
  final int category;
  final int quantity;
  final double price;
+ final double cost;
 
 
  const Products ({
@@ -69,6 +70,7 @@ class Products {
    required this.category,
    required this.quantity,
    required this.price,
+   required this.cost,
  });
 
 
@@ -79,6 +81,7 @@ class Products {
    int? category,
    int? quantity,
    double? price,
+   double? cost,
  }) =>
      Products(
        id: id ?? this.id,
@@ -87,6 +90,7 @@ class Products {
        category: category ?? this.category, 
        quantity: quantity ?? this.quantity,
        price: price ?? this.price,
+       cost: cost ?? this.cost,
      );
      
  static Products fromJson(Map<String, Object?> json) => Products(
@@ -96,6 +100,7 @@ class Products {
    category: json[ProductFields.category] as int,
    quantity: json[ProductFields.quantity] as int,
    price: json[ProductFields.price] as double,
+   cost: json[ProductFields.cost] as double,
  );
 
 
@@ -106,6 +111,7 @@ class Products {
    ProductFields.category: category,
    ProductFields.quantity: quantity,
    ProductFields.price: price,
+   ProductFields.cost: cost,
  };
 }
 

@@ -12,15 +12,31 @@ class POSPage extends StatefulWidget {
 class _POSPageState extends State<POSPage> {
   String _customerName = '';
   String _customerEmail = '';
-  int? _selectedProductId; // Change type to int? (nullable)
+  int _selectedProductId = -1; // Initialize with -1
   int _quantity = 0;
-  late DateTime _selectedDate; // Track the selected date
+  late DateTime _selectedDate;
+
+  final TextEditingController _customerNameController = TextEditingController();
+  final TextEditingController _customerEmailController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Set the default selected date to today's date
     _selectedDate = DateTime.now();
+  }
+
+  void _clearFields() {
+    setState(() {
+      _customerName = '';
+      _customerEmail = '';
+      _selectedProductId = -1; // Reset to -1
+      _quantity = 0;
+    });
+
+    _customerNameController.clear();
+    _customerEmailController.clear();
+    _quantityController.clear();
   }
 
   @override
@@ -35,6 +51,7 @@ class _POSPageState extends State<POSPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
+              controller: _customerNameController,
               decoration: InputDecoration(labelText: 'Customer Name'),
               onChanged: (value) {
                 setState(() {
@@ -44,6 +61,7 @@ class _POSPageState extends State<POSPage> {
             ),
             SizedBox(height: 16),
             TextField(
+              controller: _customerEmailController,
               decoration: InputDecoration(labelText: 'Customer Email'),
               onChanged: (value) {
                 setState(() {
@@ -61,26 +79,46 @@ class _POSPageState extends State<POSPage> {
                   return Text('Error: ${snapshot.error}');
                 } else {
                   final products = snapshot.data!;
-                  return DropdownButton<int>(
-                    value: _selectedProductId,
-                    onChanged: (int? productId) {
-                      setState(() {
-                        _selectedProductId = productId;
-                      });
-                    },
-                    items: [
-                      // Add a null item as the first item
-                      DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('Select Product'),
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _selectedProductId,
+                            onChanged: (int? productId) {
+                              setState(() {
+                                _selectedProductId = productId ?? -1;
+                              });
+                            },
+                            items: [
+                              DropdownMenuItem<int>(
+                                value: -1,
+                                child: Text('Select Product'),
+                              ),
+                              ...products.map<DropdownMenuItem<int>>((product) {
+                                return DropdownMenuItem<int>(
+                                  value: product.id!,
+                                  child: Text(product.name),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
                       ),
-                      // Map products to DropdownMenuItem
-                      ...products.map<DropdownMenuItem<int>>((product) {
-                        return DropdownMenuItem<int>(
-                          value: product.id!,
-                          child: Text(product.name),
-                        );
-                      }),
+                      IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () async {
+                          final selectedProductId = await showSearch(
+                            context: context,
+                            delegate: ProductSearchDelegate(products),
+                          );
+                          if (selectedProductId != null && selectedProductId != -1) {
+                            setState(() {
+                              _selectedProductId = selectedProductId;
+                            });
+                          }
+                        },
+                      ),
                     ],
                   );
                 }
@@ -88,16 +126,20 @@ class _POSPageState extends State<POSPage> {
             ),
             SizedBox(height: 16),
             TextField(
+              controller: _quantityController,
               decoration: InputDecoration(labelText: 'Quantity'),
               keyboardType: TextInputType.number,
               onChanged: (value) {
                 setState(() {
-                  _quantity = int.tryParse(value) ?? 0;
+                  if (int.tryParse(value) != null && int.parse(value) > 0) {
+                    _quantity = int.parse(value);
+                  } else {
+                    _quantity = 0;
+                  }
                 });
               },
             ),
             SizedBox(height: 16),
-            // Date picker widget
             InkWell(
               onTap: () {
                 _selectDate(context);
@@ -117,54 +159,55 @@ class _POSPageState extends State<POSPage> {
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  // Check if a product is selected
-                  if (_selectedProductId != null) {
-                    // Check if customer details are provided
+                  if (_selectedProductId != -1) { // Check for -1
                     if (_customerName.isNotEmpty || _customerEmail.isNotEmpty) {
-                      // Create a new customer
-                      final newCustomer = Customers(name: _customerName, email: _customerEmail);
-                      final createdCustomer = await ACDatabase.instance.createCustomers(newCustomer);
+                      if (_quantity > 0) {
+                        final newCustomer = Customers(name: _customerName, email: _customerEmail);
+                        final createdCustomer = await ACDatabase.instance.createCustomers(newCustomer);
+                        final customerId = createdCustomer.id ?? 0;
+                        final product = await ACDatabase.instance.getProduct(_selectedProductId);
 
-                      // Get the generated customer ID
-                      final customerId = createdCustomer.id ?? 0;
+                        if (product != null && product.quantity >= _quantity) {
+                          final purchase = Purchase(
+                            customerId: customerId,
+                            productId: _selectedProductId,
+                            quantity: _quantity,
+                            price: 0.0,
+                            createdTime: _selectedDate,
+                          );
 
-                      final product = await ACDatabase.instance.getProduct(_selectedProductId!);
+                          final purchaseId = await ACDatabase.instance.createPurchase(purchase);
+                          final totalPrice = product.price * _quantity;
 
-                      // Create a purchase record in the Purchase table
-                      if (product != null && product.quantity >= _quantity) {
-                        final purchase = Purchase(
-                          customerId: customerId,
-                          productId: _selectedProductId!,
-                          quantity: _quantity,
-                          price: 0.0,
-                          createdTime: _selectedDate, // Use the selected date
-                        );
+                          await ACDatabase.instance.updatePurchasePrice(purchaseId, totalPrice);
+                          await ACDatabase.instance.updateProductQuantity(
+                              _selectedProductId, product.quantity - _quantity);
 
-                        final purchaseId = await ACDatabase.instance.createPurchase(purchase);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Purchase successful!'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
 
-                        final totalPrice = product.price * _quantity;
-
-                        await ACDatabase.instance.updatePurchasePrice(purchaseId, totalPrice);
-                        await ACDatabase.instance.updateProductQuantity(
-                            _selectedProductId!, product!.quantity - _quantity);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Purchase successful!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                          _clearFields(); // Clear fields after successful purchase
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('No Stock Available'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       } else {
-                        // Show error message if insufficient stock
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('No Stock Available'),
+                            content: Text('Incorrect quantity. Please enter a positive number.'),
                             duration: Duration(seconds: 2),
                           ),
                         );
                       }
                     } else {
-                                            // Show error message if customer details are not provided
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Please Provide Customer Details'),
@@ -173,7 +216,6 @@ class _POSPageState extends State<POSPage> {
                       );
                     }
                   } else {
-                    // Show error message if no product is selected
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Please select a product.'),
@@ -191,7 +233,6 @@ class _POSPageState extends State<POSPage> {
     );
   }
 
-  // Function to display date picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -207,3 +248,70 @@ class _POSPageState extends State<POSPage> {
   }
 }
 
+class ProductSearchDelegate extends SearchDelegate<int> {
+  final List<Products> products;
+
+  ProductSearchDelegate(this.products);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, -1);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final List<Products> results = products
+        .where((product) =>
+            product.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(results[index].name),
+          onTap: () {
+            // Don't close here, just return the selected product id
+            Navigator.of(context).pop(results[index].id!);
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final List<Products> suggestions = products
+        .where((product) =>
+            product.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(suggestions[index].name),
+          onTap: () {
+            query = suggestions[index].name;
+            showResults(context);
+          },
+        );
+      },
+    );
+  }
+}

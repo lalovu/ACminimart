@@ -48,6 +48,7 @@ class _ProductsPageState extends State<ProductsPage> {
   Future<void> _showUpdateDialog(Products product) async {
     double newPrice = product.price;
     int newQuantity = product.quantity;
+    double newCost = product.cost;
 
     await showModalBottomSheet(
       context: context,
@@ -73,14 +74,24 @@ class _ProductsPageState extends State<ProductsPage> {
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   newQuantity = int.tryParse(value) ?? product.quantity;
+                }, 
+              ),
+              Text('Current Cost: ${product.cost}'),
+              TextField(
+                decoration: InputDecoration(labelText: 'New Cost'),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  newCost = double.tryParse(value) ?? product.cost;
                 },
               ),
+              
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
                   // Update product in the database
                   await ACDatabase.instance.updateProductPrice(product.id!, newPrice);
                   await ACDatabase.instance.updateProductQuantity(product.id!, newQuantity);
+                  await ACDatabase.instance.updateProductCost(product.id!, newCost);
 
                   // Refresh the UI
                   _fetchData();
